@@ -102,6 +102,16 @@ const GAME_NAME_MAP = {
 const boxContainer = document.getElementById("boxContainer");
 const caughtCount = document.getElementById("caughtCount");
 const clearSaveBtn = document.getElementById("clearSaveBtn");
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsOverlay = document.getElementById("settingsOverlay");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+const resetSettingsBtn = document.getElementById("resetSettingsBtn");
+const settingsDexTitle = document.getElementById("settingsDexTitle");
+const settingsDexSubtitle = document.getElementById("settingsDexSubtitle");
+const dexTitle = document.getElementById("dexTitle");
+const dexSubtitle = document.getElementById("dexSubtitle");
+const PROFILE_STORAGE_KEY = "livingDexProfileSettings";
 const selectedPanelContent = document.getElementById("selectedPanelContent");
 const regionTabs = document.getElementById("regionTabs");
 
@@ -239,10 +249,8 @@ function updateCaughtCount() {
 }
 
 function resetSelectedPanel() {
-  selectedPanelContent.className = "selected-placeholder";
-  selectedPanelContent.innerHTML = `
-    Hover a Pokémon to preview it. Click once to mark caught or uncaught.
-  `;
+  selectedPanelContent.className = "selected-placeholder empty";
+  selectedPanelContent.innerHTML = "";
 }
 
 function deselectPokemon() {
@@ -253,6 +261,61 @@ function deselectPokemon() {
 
 function getPokemonById(id) {
   return pokemon.find((mon) => mon.id === id);
+}
+
+
+function loadProfileSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_STORAGE_KEY)) || {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveProfileSettings(settings) {
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(settings));
+}
+
+function applyProfileSettings() {
+  const settings = loadProfileSettings();
+  const title = settings.title || "Shiny Living Dex";
+  const subtitle = settings.subtitle || "u:Chrgreen21";
+
+  if (dexTitle) dexTitle.textContent = title;
+  if (dexSubtitle) dexSubtitle.textContent = subtitle;
+  if (settingsDexTitle) settingsDexTitle.value = title;
+  if (settingsDexSubtitle) settingsDexSubtitle.value = subtitle;
+}
+
+function openSettings() {
+  applyProfileSettings();
+
+  if (settingsOverlay) {
+    settingsOverlay.hidden = false;
+  }
+}
+
+function closeSettings() {
+  if (settingsOverlay) {
+    settingsOverlay.hidden = true;
+  }
+}
+
+function handleSaveSettings() {
+  const title = settingsDexTitle?.value.trim() || "Shiny Living Dex";
+  const subtitle = settingsDexSubtitle?.value.trim() || "u:Chrgreen21";
+
+  saveProfileSettings({ title, subtitle });
+  applyProfileSettings();
+  closeSettings();
+}
+
+function handleResetSettings() {
+  saveProfileSettings({
+    title: "Shiny Living Dex",
+    subtitle: "u:Chrgreen21"
+  });
+  applyProfileSettings();
 }
 
 function renderRegionTabs() {
@@ -367,9 +430,7 @@ function updateSelectedPanel(mon) {
       </span>
     </div>
 
-    <p class="selected-help">
-      Hover a Pokémon to preview it. Click once to change its caught state.
-    </p>
+    
 
     <section class="encounter-section">
       <h4>Catchable Games</h4>
@@ -533,7 +594,7 @@ async function loadEncounterInfo(mon) {
     if (selectedPokemonId !== mon.id) return;
 
     encounterInfo.innerHTML = `
-      <p class="encounter-note error">Location data could not be loaded.<br><small>${error.message}</small></p>
+      <p class="encounter-note error">Location Data Failed To Load</p>
     `;
     console.error(error);
   }
@@ -574,7 +635,7 @@ function renderGrid() {
   updateCaughtCount();
 }
 
-clearSaveBtn.addEventListener("click", () => {
+if (clearSaveBtn) clearSaveBtn.addEventListener("click", () => {
   caught = {};
   saveCaught();
 
@@ -586,7 +647,39 @@ clearSaveBtn.addEventListener("click", () => {
   renderGrid();
 });
 
+
+if (settingsBtn) {
+  settingsBtn.addEventListener("click", openSettings);
+}
+
+if (closeSettingsBtn) {
+  closeSettingsBtn.addEventListener("click", closeSettings);
+}
+
+if (saveSettingsBtn) {
+  saveSettingsBtn.addEventListener("click", handleSaveSettings);
+}
+
+if (resetSettingsBtn) {
+  resetSettingsBtn.addEventListener("click", handleResetSettings);
+}
+
+if (settingsOverlay) {
+  settingsOverlay.addEventListener("click", (event) => {
+    if (event.target === settingsOverlay) {
+      closeSettings();
+    }
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && settingsOverlay && !settingsOverlay.hidden) {
+    closeSettings();
+  }
+});
+
 async function init() {
+  applyProfileSettings();
   boxContainer.innerHTML = `<p class="loading-message">Loading Pokémon...</p>`;
   pokemon = await loadPokemonList();
   renderRegionTabs();
@@ -618,67 +711,3 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-
-// Sketch UI settings
-document.addEventListener("DOMContentLoaded", function () {
-    const dexNameDisplay = document.getElementById("dexNameDisplay");
-    const dexUsernameDisplay = document.getElementById("dexUsernameDisplay");
-    const settingsButton = document.getElementById("settingsButton");
-    const settingsModal = document.getElementById("settingsModal");
-    const closeSettingsButton = document.getElementById("closeSettingsButton");
-    const saveSettingsButton = document.getElementById("saveSettingsButton");
-    const resetSettingsButton = document.getElementById("resetSettingsButton");
-    const dexNameInput = document.getElementById("dexNameInput");
-    const dexUsernameInput = document.getElementById("dexUsernameInput");
-
-    function loadDexSettings() {
-        const savedName = localStorage.getItem("dexDisplayName") || "Dex Name";
-        const savedUser = localStorage.getItem("dexUsername") || "u:Chrgreen21";
-
-        if (dexNameDisplay) dexNameDisplay.textContent = savedName;
-        if (dexUsernameDisplay) dexUsernameDisplay.textContent = savedUser;
-        if (dexNameInput) dexNameInput.value = savedName;
-        if (dexUsernameInput) dexUsernameInput.value = savedUser;
-    }
-
-    function openSettings() {
-        loadDexSettings();
-        if (settingsModal) settingsModal.hidden = false;
-    }
-
-    function closeSettings() {
-        if (settingsModal) settingsModal.hidden = true;
-    }
-
-    function saveSettings() {
-        const name = dexNameInput && dexNameInput.value.trim() ? dexNameInput.value.trim() : "Dex Name";
-        const user = dexUsernameInput && dexUsernameInput.value.trim() ? dexUsernameInput.value.trim() : "u:Chrgreen21";
-
-        localStorage.setItem("dexDisplayName", name);
-        localStorage.setItem("dexUsername", user);
-
-        loadDexSettings();
-        closeSettings();
-    }
-
-    function resetSettings() {
-        localStorage.removeItem("dexDisplayName");
-        localStorage.removeItem("dexUsername");
-        loadDexSettings();
-    }
-
-    loadDexSettings();
-
-    if (settingsButton) settingsButton.addEventListener("click", openSettings);
-    if (closeSettingsButton) closeSettingsButton.addEventListener("click", closeSettings);
-    if (saveSettingsButton) saveSettingsButton.addEventListener("click", saveSettings);
-    if (resetSettingsButton) resetSettingsButton.addEventListener("click", resetSettings);
-
-    if (settingsModal) {
-        settingsModal.addEventListener("click", function (event) {
-            if (event.target === settingsModal) closeSettings();
-        });
-    }
-});
-

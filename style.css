@@ -563,212 +563,335 @@ button:hover {
 }
 
 
-/* Sketch UI update */
+/* Settings + binder tab UI patch */
 
-/* Make the top area look like the sketch */
-header,
-.app-header,
-.top-bar,
-.page-header {
-    position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-    gap: 16px;
+.top-bar h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: 0.01em;
 }
 
-.dex-title-block {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+.top-bar p {
+  font-size: clamp(1rem, 1.6vw, 1.35rem);
 }
 
-.dex-title-block h1,
-#dexNameDisplay {
-    margin: 0;
-    font-family: "Comic Sans MS", "Comic Sans", "Segoe Print", "Bradley Hand", cursive;
-    font-size: clamp(2.1rem, 5vw, 4.2rem);
-    line-height: 0.95;
-    letter-spacing: 0.02em;
-    color: rgba(239, 255, 250, 0.96);
-    text-shadow: 0 0 12px rgba(92, 255, 220, 0.15);
+#settingsBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 128px;
 }
 
-.dex-title-block p,
-#dexUsernameDisplay {
-    margin: 0 0 12px 4px;
-    font-family: "Comic Sans MS", "Comic Sans", "Segoe Print", "Bradley Hand", cursive;
-    font-size: clamp(0.8rem, 1.6vw, 1.2rem);
-    color: rgba(180, 230, 218, 0.9);
+/* Binder-style region tabs */
+.region-tabs {
+  align-items: flex-end;
+  gap: 0;
+  row-gap: 8px;
+  padding-top: 8px;
 }
 
-/* Place Settings as its own top button */
-.settings-button {
-    justify-self: end;
-    align-self: start;
-    padding: 10px 28px;
-    border-radius: 999px;
-    border: 1px solid rgba(38, 218, 201, 0.5);
-    background: rgba(0, 136, 124, 0.4);
-    color: rgba(239, 255, 250, 0.95);
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    box-shadow: inset 0 0 16px rgba(34, 255, 220, 0.08), 0 0 12px rgba(34, 255, 220, 0.08);
-}
-
-.settings-button:hover {
-    background: rgba(0, 162, 146, 0.52);
-}
-
-/* Region buttons: smaller, pill-like, more like the sketch */
-.region-tabs,
-.region-nav,
-.tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: clamp(8px, 1vw, 12px);
-    align-items: center;
-}
-
-.region-tabs button,
-.region-nav button,
-.tabs button,
 .region-tab {
-    min-width: auto;
-    padding: 8px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(35, 220, 203, 0.48);
-    background: rgba(0, 135, 123, 0.36);
-    color: rgba(239, 255, 250, 0.92);
-    font-weight: 800;
-    letter-spacing: 0.01em;
+  position: relative;
+  border-radius: 16px 16px 0 0;
+  border: 2px solid var(--border-soft);
+  border-bottom: none;
+  background:
+    linear-gradient(180deg, rgba(18, 145, 131, 0.96), rgba(0, 95, 84, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 -2px 8px rgba(0, 0, 0, 0.18);
+  padding: 11px 18px 13px;
+  margin-right: -2px;
+  min-width: 86px;
+  transform: translateY(2px);
+  transition: transform 0.14s ease, filter 0.14s ease, background 0.14s ease;
 }
 
-/* Count area */
-.caught-count,
-#caughtCount,
-.save-count {
-    font-weight: 800;
-    color: rgba(220, 244, 239, 0.86);
+.region-tab:hover,
+.region-tab:focus-visible {
+  transform: translateY(-3px);
+  filter: brightness(1.15);
+  z-index: 2;
+}
+
+.region-tab::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: -2px;
+  height: 2px;
+  background: rgba(0, 70, 62, 0.92);
 }
 
 /* Settings modal */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 18, 16, 0.72);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.settings-overlay[hidden] {
+  display: none;
+}
+
 .settings-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 20000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 20, 18, 0.66);
-    backdrop-filter: blur(6px);
+  width: min(460px, 100%);
+  background:
+    radial-gradient(circle at top left, rgba(0, 150, 135, 0.22), transparent 45%),
+    rgba(0, 70, 62, 0.98);
+  border: 2px solid var(--border-soft);
+  border-radius: 26px;
+  padding: 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
-.settings-modal[hidden] {
-    display: none;
+.settings-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-.settings-card {
-    width: min(92vw, 420px);
-    padding: 22px;
-    border-radius: 22px;
-    border: 1px solid rgba(41, 226, 206, 0.45);
-    background: rgba(0, 78, 68, 0.96);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.45), inset 0 0 30px rgba(48, 255, 225, 0.06);
-    color: rgba(239, 255, 250, 0.96);
+.settings-modal-header h2 {
+  margin: 0;
 }
 
-.settings-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 14px;
+.icon-button {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 1.5rem;
 }
 
-.settings-card-header h2 {
-    margin: 0;
+.settings-field {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-weight: 700;
 }
 
-#closeSettingsButton {
-    width: 36px;
-    height: 36px;
-    border-radius: 999px;
-    border: 1px solid rgba(38, 218, 201, 0.45);
-    background: rgba(0, 114, 104, 0.5);
-    color: white;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
+.settings-field input {
+  width: 100%;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: rgba(0, 50, 44, 0.82);
+  color: var(--text);
+  padding: 12px 14px;
+  font: inherit;
+  outline: none;
 }
 
-.settings-card label {
-    display: block;
-    margin: 14px 0 6px;
-    font-weight: 800;
-}
-
-.settings-card input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 12px 14px;
-    border-radius: 14px;
-    border: 1px solid rgba(38, 218, 201, 0.45);
-    background: rgba(0, 48, 43, 0.84);
-    color: white;
-    font-size: 1rem;
+.settings-field input:focus {
+  border-color: rgba(120, 255, 238, 0.95);
+  box-shadow: 0 0 0 3px rgba(120, 255, 238, 0.12);
 }
 
 .settings-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0;
 }
 
-.settings-actions button {
-    padding: 10px 16px;
-    border-radius: 999px;
-    border: 1px solid rgba(38, 218, 201, 0.45);
-    background: rgba(0, 135, 123, 0.48);
-    color: white;
-    font-weight: 800;
-    cursor: pointer;
+.secondary-button {
+  background: rgba(0, 65, 58, 0.9);
 }
 
-/* Keep Box 1 button centered */
-#jumpToBoxOneButton,
+.settings-danger-zone {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(0, 194, 174, 0.32);
+}
+
+.settings-danger-zone h3 {
+  margin: 0 0 6px;
+}
+
+.settings-danger-zone p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.danger-button {
+  border-color: rgba(255, 160, 160, 0.65);
+  background: rgba(115, 36, 36, 0.86);
+}
+
+/* No-overlap responsive layout fix for the uploaded current version */
+body {
+  overflow-x: hidden;
+}
+
+.app-shell {
+  max-width: 100%;
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 26vw, 380px);
+  gap: clamp(16px, 2vw, 28px);
+}
+
+.dex-area,
+.box-card,
+.box-container,
+.dex-box {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.box-card,
+.dex-box {
+  overflow: hidden;
+}
+
+.selected-panel {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pokemon-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: repeat(5, auto);
+  gap: clamp(8px, 1vw, 14px);
+  width: 100%;
+  max-width: 100%;
+  justify-content: stretch;
+}
+
+.pokemon-cell {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: clamp(132px, 13.5vw, var(--cell-height));
+  aspect-ratio: 0.8 / 1;
+  padding: clamp(7px, 0.8vw, 12px);
+}
+
+.pokemon-name {
+  font-size: clamp(0.72rem, 1vw, 1rem);
+  max-width: calc(100% - 22px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pokemon-number {
+  font-size: clamp(0.8rem, 1.05vw, 1.1rem);
+}
+
+.pokemon-sprite {
+  transform: scale(clamp(0.72, 5.2vw, 1));
+  transform-origin: center;
+}
+
 #scrollTopButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
 }
 
-@media (max-width: 720px) {
-    header,
-    .app-header,
-    .top-bar,
-    .page-header {
-        grid-template-columns: 1fr;
-    }
+@media (max-width: 1250px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+}
 
-    .settings-button {
-        justify-self: start;
-    }
+@media (max-width: 950px) {
+  .app-shell {
+    display: block;
+  }
+
+  .selected-panel {
+    position: relative;
+    top: auto;
+    margin-top: 24px;
+    min-height: auto;
+  }
+
+  #scrollTopButton {
+    right: 24px;
+    bottom: 24px;
+  }
+}
+
+@media (max-width: 650px) {
+  .pokemon-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 
-/* Center selected Pokémon panel heading */
-.selected-panel h2,
-.info-panel h2,
-.side-panel h2,
-.pokemon-panel h2,
-#selected-panel h2,
-#info-panel h2 {
-    text-align: center;
-    width: 100%;
+/* Clean selected panel + blended binder tabs patch */
+
+.selected-placeholder.empty {
+  display: none;
+}
+
+/* Give the tab area a subtle base so tabs look attached to the binder/card */
+.region-tabs {
+  position: relative;
+  padding: 10px 0 0;
+  margin-bottom: -2px;
+}
+
+.region-tabs::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 10px;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 70, 62, 0),
+    rgba(0, 70, 62, 0.88)
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.region-tab {
+  z-index: 1;
+  border-bottom-color: transparent;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(18, 145, 131, 0.98) 0%,
+      rgba(0, 105, 94, 0.96) 58%,
+      rgba(0, 70, 62, 0.88) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -10px 16px rgba(0, 70, 62, 0.35),
+    0 -2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.region-tab::after {
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 8px;
+  border-radius: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 70, 62, 0.35),
+    rgba(0, 70, 62, 0.95)
+  );
+}
+
+.region-tab:hover,
+.region-tab:focus-visible {
+  z-index: 3;
 }
 
