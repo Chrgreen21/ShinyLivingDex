@@ -1,1 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Living Dex Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <main class="dex-area">
+      <header class="top-bar">
+        <div>
+          <h1>Living Dex</h1>
+          <p>National Dex box layout</p>
+        </div>
 
+        <div class="controls">
+          <button id="clearSaveBtn">Clear Caught Save</button>
+        </div>
+      </header>
+
+      <section class="box-card">
+        <div class="box-header">
+          <nav id="regionTabs" class="region-tabs" aria-label="Region jumps"></nav>
+          <span id="caughtCount">0 caught</span>
+        </div>
+
+        <div id="boxContainer" class="box-container"></div>
+      </section>
+    </main>
+
+    <aside class="selected-panel">
+      <h2>Selected Pokémon</h2>
+      <div id="selectedPanelContent" class="selected-placeholder">
+        Click a Pokémon to select it. Click the selected Pokémon again to mark caught or uncaught.
+      </div>
+    </aside>
+  </div>
+
+  <script src="app.js"></script>
+
+<button id="jumpToBoxOneButton" type="button" title="Jump to Box 1" aria-label="Jump to Box 1">↑</button>
+</body>
+</html>
