@@ -11,12 +11,15 @@
     <main class="dex-area">
       <header class="top-bar">
         <div>
-          <h1>Living Dex</h1>
-          <p>National Dex box layout</p>
+          <div class="dex-title-block">
+            <h1 id="dexNameDisplay">Dex Name</h1>
+            <p id="dexUsernameDisplay">u:Chrgreen21</p>
+        </div>
         </div>
 
         <div class="controls">
           <button id="clearSaveBtn">Clear Caught Save</button>
+        <button id="settingsButton" class="settings-button" type="button">Settings</button>
         </div>
       </header>
 
@@ -41,6 +44,27 @@
   <script src="app.js"></script>
 
 <button id="scrollTopButton" title="Back to Box 1">↑</button>
+
+
+<div id="settingsModal" class="settings-modal" hidden>
+    <div class="settings-card">
+        <div class="settings-card-header">
+            <h2>Settings</h2>
+            <button id="closeSettingsButton" type="button" aria-label="Close settings">×</button>
+        </div>
+
+        <label for="dexNameInput">Dex Name</label>
+        <input id="dexNameInput" type="text" placeholder="Dex Name">
+
+        <label for="dexUsernameInput">Username</label>
+        <input id="dexUsernameInput" type="text" placeholder="u:Chrgreen21">
+
+        <div class="settings-actions">
+            <button id="saveSettingsButton" type="button">Save</button>
+            <button id="resetSettingsButton" type="button">Reset</button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

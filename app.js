@@ -618,3 +618,67 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+
+// Sketch UI settings
+document.addEventListener("DOMContentLoaded", function () {
+    const dexNameDisplay = document.getElementById("dexNameDisplay");
+    const dexUsernameDisplay = document.getElementById("dexUsernameDisplay");
+    const settingsButton = document.getElementById("settingsButton");
+    const settingsModal = document.getElementById("settingsModal");
+    const closeSettingsButton = document.getElementById("closeSettingsButton");
+    const saveSettingsButton = document.getElementById("saveSettingsButton");
+    const resetSettingsButton = document.getElementById("resetSettingsButton");
+    const dexNameInput = document.getElementById("dexNameInput");
+    const dexUsernameInput = document.getElementById("dexUsernameInput");
+
+    function loadDexSettings() {
+        const savedName = localStorage.getItem("dexDisplayName") || "Dex Name";
+        const savedUser = localStorage.getItem("dexUsername") || "u:Chrgreen21";
+
+        if (dexNameDisplay) dexNameDisplay.textContent = savedName;
+        if (dexUsernameDisplay) dexUsernameDisplay.textContent = savedUser;
+        if (dexNameInput) dexNameInput.value = savedName;
+        if (dexUsernameInput) dexUsernameInput.value = savedUser;
+    }
+
+    function openSettings() {
+        loadDexSettings();
+        if (settingsModal) settingsModal.hidden = false;
+    }
+
+    function closeSettings() {
+        if (settingsModal) settingsModal.hidden = true;
+    }
+
+    function saveSettings() {
+        const name = dexNameInput && dexNameInput.value.trim() ? dexNameInput.value.trim() : "Dex Name";
+        const user = dexUsernameInput && dexUsernameInput.value.trim() ? dexUsernameInput.value.trim() : "u:Chrgreen21";
+
+        localStorage.setItem("dexDisplayName", name);
+        localStorage.setItem("dexUsername", user);
+
+        loadDexSettings();
+        closeSettings();
+    }
+
+    function resetSettings() {
+        localStorage.removeItem("dexDisplayName");
+        localStorage.removeItem("dexUsername");
+        loadDexSettings();
+    }
+
+    loadDexSettings();
+
+    if (settingsButton) settingsButton.addEventListener("click", openSettings);
+    if (closeSettingsButton) closeSettingsButton.addEventListener("click", closeSettings);
+    if (saveSettingsButton) saveSettingsButton.addEventListener("click", saveSettings);
+    if (resetSettingsButton) resetSettingsButton.addEventListener("click", resetSettings);
+
+    if (settingsModal) {
+        settingsModal.addEventListener("click", function (event) {
+            if (event.target === settingsModal) closeSettings();
+        });
+    }
+});
+
