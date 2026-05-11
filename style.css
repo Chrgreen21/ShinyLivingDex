@@ -484,8 +484,9 @@ button:hover {
 }
 
 
-/* Jump to Box 1 Button */
-#jumpToBoxOneButton {
+/* Scroll To Top Button */
+
+#scrollTopButton {
     position: fixed;
     right: 384px;
     bottom: 24px;
@@ -493,250 +494,70 @@ button:hover {
     height: 52px;
     border: none;
     border-radius: 50%;
-    background: rgba(40, 40, 40, 0.92);
+    background: rgba(40, 40, 40, 0.9);
     color: white;
     font-size: 28px;
-    line-height: 52px;
-    text-align: center;
     cursor: pointer;
     z-index: 9999;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    transition: 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
 }
 
-#jumpToBoxOneButton:hover {
-    transform: scale(1.06);
-    background: rgba(70, 70, 70, 0.96);
-}
-
-@media (max-width: 900px) {
-    #jumpToBoxOneButton {
-        right: 24px;
-        bottom: 24px;
-    }
-}
-
-
-/* Responsive dex layout patch */
-
-.app-shell,
-.main-layout,
-.layout,
-.dex-layout,
-.content-layout {
-    max-width: 100%;
-}
-
-.main-layout,
-.layout,
-.dex-layout,
-.content-layout {
-    align-items: flex-start;
-}
-
-.dex-area,
-.dex-main,
-.boxes-area,
-.boxes-panel,
-.box-list,
-.boxes,
-.pokedex-area {
-    flex: 1 1 auto;
-    min-width: 0;
-    max-width: 100%;
-}
-
-/* Keep the selected panel visible but prevent it from crushing the grid too much */
-.selected-panel,
-.info-panel,
-.side-panel,
-.pokemon-panel,
-#selected-panel,
-#info-panel {
-    flex: 0 0 clamp(300px, 28vw, 390px);
-    width: clamp(300px, 28vw, 390px);
-    max-width: clamp(300px, 28vw, 390px);
-}
-
-/* Make each 6x5 box fit inside the available left area */
-.box-section,
-.box,
-.dex-box,
-.pokemon-box {
-    max-width: 100%;
-    overflow: hidden;
-}
-
-/* Preserve the classic 6 columns, but let the cards shrink to fit */
-.pokemon-grid,
-.box-grid,
-.dex-grid,
-.grid {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: clamp(8px, 1.2vw, 18px);
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-/* Scale cards instead of overflowing under the side panel */
-.pokemon-card,
-.dex-card,
-.card {
-    width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-}
-
-/* Only apply card aspect ratio to likely pokemon cards, not every card in the app */
-.pokemon-card,
-.dex-card {
-    aspect-ratio: 3 / 4;
-    height: auto;
-}
-
-/* Scale text and sprites down on tighter screens */
-.pokemon-card .pokemon-name,
-.dex-card .pokemon-name,
-.pokemon-card h3,
-.dex-card h3 {
-    font-size: clamp(0.72rem, 1.15vw, 1.05rem);
-}
-
-.pokemon-card .pokemon-number,
-.dex-card .pokemon-number,
-.pokemon-number {
-    font-size: clamp(0.75rem, 1.3vw, 1.15rem);
+#scrollTopButton:hover {
+    transform: scale(1.08);
+    background: rgba(70, 70, 70, 0.95);
 }
 
 
 
-/* Center the Box 1 arrow perfectly inside the circle */
-#jumpToBoxOneButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    line-height: 1;
-    text-align: center;
+/* Hover preview and one-click caught toggle */
+.pokemon-cell {
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease;
 }
 
-/* Tablet/mobile: stack the panel under the dex so nothing overlaps */
-@media (max-width: 1050px) {
-    .main-layout,
-    .layout,
-    .dex-layout,
-    .content-layout {
-        flex-direction: column;
-    }
-
-    .selected-panel,
-    .info-panel,
-    .side-panel,
-    .pokemon-panel,
-    #selected-panel,
-    #info-panel {
-        position: relative;
-        top: auto;
-        width: 100%;
-        max-width: 100%;
-        flex-basis: auto;
-    }
-
-    #jumpToBoxOneButton {
-        right: 24px;
-        bottom: 24px;
-    }
+.pokemon-cell:hover,
+.pokemon-cell:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(120, 200, 140, 0.38);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.24);
+  filter: brightness(1.08);
+  outline: none;
 }
 
-/* Very small screens: use 3 columns so cards stay readable */
-@media (max-width: 650px) {
-    .pokemon-grid,
-    .box-grid,
-    .dex-grid,
-    .grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
+/* The old persistent selected class is no longer used for click behavior. */
+.pokemon-cell.selected {
+  transform: none;
+}
+
+/* Center the Box 1 arrow inside the circle */
+#scrollTopButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
 }
 
 
-/* Sprite clipping fix */
 
-/* Let the card contents breathe instead of hard-clipping the sprite */
-.pokemon-card,
-.dex-card {
-    overflow: visible;
-    min-height: clamp(135px, 15vw, 190px);
-    padding: clamp(8px, 1vw, 14px);
+/* Softer hover highlight like the original */
+.pokemon-cell:hover,
+.pokemon-cell:focus-visible {
+  transform: translateY(-2px);
+  background: rgba(90, 180, 120, 0.22) !important;
+  border-color: rgba(120, 200, 140, 0.38) !important;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+  filter: brightness(1.04);
+  outline: none;
 }
 
-/* Make the sprite container scale with the card */
-.pokemon-art,
-.sprite-frame,
-.sprite-wrapper,
-.pokemon-image-wrap,
-.pokemon-sprite-wrap {
-    width: 100%;
-    min-width: 0;
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: visible;
+/* Remove the bright white outline effect */
+.pokemon-cell:hover::before,
+.pokemon-cell:focus-visible::before {
+  display: none !important;
 }
 
-/* Sprite sheet cells need to shrink visually without cropping */
-.pokemon-sprite,
-.sprite,
-.dex-sprite {
-    transform: scale(clamp(0.72, 0.9vw, 1));
-    transform-origin: center;
-    max-width: 100%;
-    max-height: 100%;
+.pokemon-cell.selected {
+  box-shadow: none !important;
+  outline: none !important;
 }
-
-/* If the sprite is drawn with background-position, preserve the 64x64 source area but scale the whole element */
-.sprite {
-    width: 64px;
-    height: 64px;
-    flex: 0 0 64px;
-}
-
-/* Keep silhouettes from being chopped when scaled */
-.pokemon-card.is-uncaught .sprite,
-.pokemon-card.uncaught .sprite,
-.dex-card.is-uncaught .sprite,
-.dex-card.uncaught .sprite {
-    overflow: visible;
-}
-
-/* On smaller screens, reduce card text spacing so the sprite keeps room */
-@media (max-width: 1200px) {
-    .pokemon-card,
-    .dex-card {
-        min-height: clamp(125px, 16vw, 175px);
-        gap: 4px;
-    }
-
-    .pokemon-card h3,
-    .dex-card h3,
-    .pokemon-card .pokemon-name,
-    .dex-card .pokemon-name {
-        margin-bottom: 2px;
-    }
-
-    .pokemon-card .pokemon-number,
-    .dex-card .pokemon-number,
-    .pokemon-number {
-        margin-top: 2px;
-    }
-}
-
-/* Avoid forcing every sprite/image down to 52% height, which was causing visible cropping */
-.pokemon-sprite,
-.sprite,
-.pokemon-image,
-.dex-sprite {
-    object-fit: contain;
-}
-

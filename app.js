@@ -241,7 +241,7 @@ function updateCaughtCount() {
 function resetSelectedPanel() {
   selectedPanelContent.className = "selected-placeholder";
   selectedPanelContent.innerHTML = `
-    Click a Pokémon to select it. Click the selected Pokémon again to mark caught or uncaught.
+    Hover a Pokémon to preview it. Click once to mark caught or uncaught.
   `;
 }
 
@@ -278,6 +278,7 @@ function renderRegionTabs() {
   });
 }
 
+
 function renderPokemonCell(mon) {
   const cell = document.createElement("button");
   cell.className = "pokemon-cell";
@@ -287,10 +288,6 @@ function renderPokemonCell(mon) {
 
   if (caught[mon.id]) {
     cell.classList.add("caught");
-  }
-
-  if (selectedPokemonId === mon.id) {
-    cell.classList.add("selected");
   }
 
   const name = document.createElement("div");
@@ -318,18 +315,22 @@ function renderPokemonCell(mon) {
   cell.appendChild(number);
   cell.appendChild(badge);
 
-  cell.addEventListener("click", () => {
-    if (selectedPokemonId === mon.id) {
-      caught[mon.id] = !caught[mon.id];
-      saveCaught();
-      cell.classList.toggle("caught", caught[mon.id]);
-      updateCaughtCount();
-      updateSelectedPanel(mon);
-      return;
-    }
-
+  cell.addEventListener("mouseenter", () => {
     selectedPokemonId = mon.id;
-    updateSelectedHighlight();
+    updateSelectedPanel(mon);
+  });
+
+  cell.addEventListener("focus", () => {
+    selectedPokemonId = mon.id;
+    updateSelectedPanel(mon);
+  });
+
+  cell.addEventListener("click", () => {
+    caught[mon.id] = !caught[mon.id];
+    saveCaught();
+    cell.classList.toggle("caught", caught[mon.id]);
+    updateCaughtCount();
+    selectedPokemonId = mon.id;
     updateSelectedPanel(mon);
   });
 
@@ -337,10 +338,7 @@ function renderPokemonCell(mon) {
 }
 
 function updateSelectedHighlight() {
-  document.querySelectorAll(".pokemon-cell").forEach((cell) => {
-    const id = Number(cell.dataset.pokemonId);
-    cell.classList.toggle("selected", id === selectedPokemonId);
-  });
+  // Selection is now handled visually by CSS hover/focus instead of a persistent selected class.
 }
 
 function getOfficialArtworkUrl(mon) {
@@ -370,113 +368,130 @@ function updateSelectedPanel(mon) {
     </div>
 
     <p class="selected-help">
-      Click this Pokémon in the box again to change its caught state.
+      Hover a Pokémon to preview it. Click once to change its caught state.
     </p>
 
     <section class="encounter-section">
       <h4>Catchable Games</h4>
-      <div id="encounterInfo" class="encounter-info">Loading X/Y and newer encounter data...</div>
+      <div id="encounterInfo" class="encounter-info">Loading PokédexTracker location data...</div>
     </section>
   `;
 
   loadEncounterInfo(mon);
 }
 
-function formatLocationName(locationAreaName) {
-  return titleCaseFromSlug(
-    locationAreaName
-      .replace(/-area$/i, "")
-      .replace(/-\d+f$/i, (match) => match.toUpperCase())
-      .replace(/-b\d+f$/i, (match) => match.toUpperCase())
-  );
+function normalizePokedexTrackerMethod(value) {
+  if (value === null || value === undefined) return "";
+
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizePokedexTrackerMethod).filter(Boolean).join(": ");
+  }
+
+  if (typeof value === "object") {
+    if (value.name) return String(value.name).trim();
+    if (value.location) return String(value.location).trim();
+    if (value.method) return String(value.method).trim();
+    if (value.value) return normalizePokedexTrackerMethod(value.value);
+    if (value.values) return normalizePokedexTrackerMethod(value.values);
+  }
+
+  return String(value).trim();
 }
 
-function formatMethodName(methodName) {
-  const methodMap = {
-    walk: "Walking",
-    surfing: "Surfing",
-    "old-rod": "Old Rod",
-    "good-rod": "Good Rod",
-    "super-rod": "Super Rod",
-    "rock-smash": "Rock Smash",
-    "headbutt-low": "Headbutt",
-    "headbutt-normal": "Headbutt",
-    "headbutt-high": "Headbutt",
-    "grass-spots": "Grass Spots",
-    "dark-grass": "Dark Grass",
-    "rustling-grass": "Rustling Grass",
-    "cave-spots": "Cave Spots",
-    "bridge-spots": "Bridge Spots",
-    "super-rod-spots": "Super Rod Spots",
-    "surfing-spots": "Surfing Spots",
-    "yellow-flowers": "Yellow Flowers",
-    "purple-flowers": "Purple Flowers",
-    "red-flowers": "Red Flowers",
-    "rough-terrain": "Rough Terrain",
-    gift: "Gift",
-    "only-one": "Only One"
-  };
+function parsePokedexTrackerData(data) {
+  const locations = Array.isArray(data.locations) ? data.locations : [];
 
-  return methodMap[methodName] || titleCaseFromSlug(methodName);
+  return locations
+    .map((entry) => {
+      const gameName =
+        entry?.game?.name ||
+        entry?.game_name ||
+        entry?.game ||
+        "Unknown Game";
+
+      const rawValues = Array.isArray(entry.values)
+        ? entry.values
+        : entry.value
+          ? [entry.value]
+          : entry.location
+            ? [entry.location]
+            : [];
+
+      const methods = rawValues
+        .map(normalizePokedexTrackerMethod)
+        .filter(Boolean)
+        .filter((method, index, arr) => arr.indexOf(method) === index);
+
+      return {
+        displayName: gameName.startsWith("Pokémon") ? gameName : `Pokémon ${gameName}`,
+        locations: methods
+      };
+    })
+    .filter((group) => group.locations.length);
 }
 
-function parseEncounterData(rawEncounterData) {
-  const grouped = {};
 
-  rawEncounterData.forEach((locationEntry) => {
-    const locationName = formatLocationName(locationEntry.location_area.name);
+async function loadLocalPokedexTrackerData() {
+  const possiblePaths = [
+    "data/pokedextracker-locations.json",
+    "./data/pokedextracker-locations.json",
+    "data/pokedextracker-locations.json",
+    "./data/pokedextracker-locations.json",
+    "pokedextracker-locations.json",
+    "assets/sprites/pokedextracker-locations.json"
+  ];
 
-    locationEntry.version_details.forEach((versionDetail) => {
-      const versionName = versionDetail.version.name;
+  const errors = [];
 
-      if (!GAME_ORDER.includes(versionName)) return;
-
-      if (!grouped[versionName]) {
-        grouped[versionName] = new Set();
-      }
-
-      const methods = new Set();
-
-      versionDetail.encounter_details.forEach((detail) => {
-        if (detail.method && detail.method.name) {
-          methods.add(formatMethodName(detail.method.name));
-        }
+  for (const path of possiblePaths) {
+    try {
+      const response = await fetch(path, {
+        cache: "no-store"
       });
 
-      if (methods.size === 0 || methods.has("Walking")) {
-        grouped[versionName].add(locationName);
-      } else {
-        methods.forEach((method) => {
-          grouped[versionName].add(`${locationName} (${method})`);
-        });
+      if (!response.ok) {
+        errors.push(`${path}: HTTP ${response.status}`);
+        continue;
       }
-    });
-  });
 
-  return GAME_ORDER
-    .filter((versionName) => grouped[versionName])
-    .map((versionName) => ({
-      versionName,
-      displayName: GAME_NAME_MAP[versionName] || titleCaseFromSlug(versionName),
-      locations: Array.from(grouped[versionName]).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-    }));
+      return await response.json();
+    } catch (error) {
+      errors.push(`${path}: ${error.message}`);
+    }
+  }
+
+  throw new Error(`Could not load local PokédexTracker JSON. Tried: ${errors.join(" | ")}`);
 }
 
 async function fetchEncounterData(mon) {
-  if (encounterCache[mon.id]) {
-    return encounterCache[mon.id];
+  const cacheKey = `local-pokedextracker-${mon.id}`;
+
+  if (encounterCache[cacheKey]) {
+    return encounterCache[cacheKey];
   }
 
-  const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${mon.id}/encounters`);
-
-  if (!response.ok) {
-    throw new Error("Could not load encounter data");
+  if (!window.__POKEDEXTRACKER_DATA__) {
+    window.__POKEDEXTRACKER_DATA__ = await loadLocalPokedexTrackerData();
   }
 
-  const rawEncounterData = await response.json();
-  const parsed = parseEncounterData(rawEncounterData);
+  const entry =
+    window.__POKEDEXTRACKER_DATA__[String(mon.id)] ||
+    window.__POKEDEXTRACKER_DATA__[mon.id];
 
-  encounterCache[mon.id] = parsed;
+  const parsed = entry?.locations?.map((group) => ({
+    displayName: group.game || group.displayName || "Unknown Game",
+    locations: Array.isArray(group.methods)
+      ? group.methods
+      : Array.isArray(group.locations)
+        ? group.locations
+        : []
+  })).filter((group) => group.locations.length) || [];
+
+  encounterCache[cacheKey] = parsed;
   saveEncounterCache();
 
   return parsed;
@@ -490,8 +505,7 @@ function renderEncounterInfo(groups, mon) {
   if (!groups.length) {
     encounterInfo.innerHTML = `
       <p class="encounter-note">
-        PokéAPI does not list wild encounter locations for ${mon.name} from Pokémon X/Y onward.
-        It may require evolution, trade, transfer, event, gift, DLC, raid data, or HOME.
+        The local PokédexTracker JSON did not contain location data for ${mon.name} with dex_type=21.
       </p>
     `;
     return;
@@ -519,9 +533,7 @@ async function loadEncounterInfo(mon) {
     if (selectedPokemonId !== mon.id) return;
 
     encounterInfo.innerHTML = `
-      <p class="encounter-note error">
-        Encounter data could not be loaded right now. Try again in a minute.
-      </p>
+      <p class="encounter-note error">Location data could not be loaded.<br><small>${error.message}</small></p>
     `;
     console.error(error);
   }
@@ -560,26 +572,18 @@ function renderGrid() {
   }
 
   updateCaughtCount();
-  updateSelectedHighlight();
 }
 
 clearSaveBtn.addEventListener("click", () => {
   caught = {};
   saveCaught();
+
   if (selectedPokemonId !== null) {
     const selectedMon = getPokemonById(selectedPokemonId);
     if (selectedMon) updateSelectedPanel(selectedMon);
   }
+
   renderGrid();
-});
-
-document.addEventListener("click", (event) => {
-  if (event.target.closest(".pokemon-cell")) return;
-  if (event.target.closest(".selected-panel")) return;
-
-  if (selectedPokemonId !== null) {
-    deselectPokemon();
-  }
 });
 
 async function init() {
@@ -591,46 +595,26 @@ async function init() {
 
 init();
 
+document.addEventListener("DOMContentLoaded", () => {
+  const scrollTopButton = document.getElementById("scrollTopButton");
 
-// Jump to Box 1 Button
-document.addEventListener("DOMContentLoaded", function () {
-    var jumpButton = document.getElementById("jumpToBoxOneButton");
+  if (!scrollTopButton) return;
 
-    if (!jumpButton) {
-        return;
+  scrollTopButton.addEventListener("click", () => {
+    const boxOne =
+      document.getElementById(getBoxId(0)) ||
+      document.querySelector(".dex-box");
+
+    if (boxOne) {
+      boxOne.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    } else {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
     }
-
-    jumpButton.addEventListener("click", function () {
-        var headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, .box-title, .box-header"));
-        var boxOneHeading = headings.find(function (heading) {
-            return heading.textContent && heading.textContent.trim().toLowerCase().startsWith("box 1");
-        });
-
-        var target = null;
-
-        if (boxOneHeading) {
-            target = boxOneHeading.closest(".box-section, .box, section, article, div") || boxOneHeading;
-        }
-
-        if (!target) {
-            target =
-                document.getElementById("box-1") ||
-                document.querySelector('[data-box="1"]') ||
-                document.querySelector(".box-section") ||
-                document.querySelector(".box");
-        }
-
-        if (target) {
-            target.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
-        } else {
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
-        }
-    });
+  });
 });
-
