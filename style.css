@@ -561,3 +561,220 @@ button:hover {
   box-shadow: none !important;
   outline: none !important;
 }
+
+
+/* Current build responsive no-overlap patch */
+
+body {
+    overflow-x: hidden;
+}
+
+.app,
+.app-shell,
+.page,
+.main-layout,
+.layout,
+.dex-layout,
+.content-layout,
+.dex-page {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Force the dex and selected panel into true separate columns */
+.main-layout,
+.layout,
+.dex-layout,
+.content-layout,
+.app-shell,
+.dex-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 26vw, 390px);
+    gap: clamp(16px, 2vw, 28px);
+    align-items: start;
+}
+
+/* Left content must be allowed to shrink instead of running under the panel */
+.dex-area,
+.dex-main,
+.dex-container,
+.dex-panel,
+.boxes-area,
+.boxes-panel,
+.box-list,
+.boxes,
+.pokedex-area,
+main {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    grid-column: 1;
+}
+
+/* Right panel stays in its own column */
+.selected-panel,
+.info-panel,
+.side-panel,
+.pokemon-panel,
+#selected-panel,
+#info-panel {
+    position: sticky;
+    top: 16px;
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    grid-column: 2;
+}
+
+/* Boxes fit inside available left column */
+.box-section,
+.box,
+.dex-box,
+.pokemon-box {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Preserve 6 columns, but let each cell/card scale */
+.pokemon-grid,
+.box-grid,
+.dex-grid,
+.grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: clamp(8px, 1vw, 16px);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+/* Scale cards instead of overflowing */
+.pokemon-card,
+.dex-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    aspect-ratio: 0.78 / 1;
+    height: auto;
+    min-height: clamp(128px, 13vw, 190px);
+    padding: clamp(6px, 0.9vw, 13px);
+    overflow: hidden;
+}
+
+/* Keep sprites contained */
+.pokemon-card .sprite,
+.dex-card .sprite,
+.sprite {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 64px;
+    margin-left: auto;
+    margin-right: auto;
+    transform: scale(clamp(0.68, 5.2vw, 1));
+    transform-origin: center;
+}
+
+.pokemon-sprite,
+.dex-sprite,
+.pokemon-image,
+.sprite {
+    object-fit: contain;
+}
+
+/* Scale card text */
+.pokemon-card .pokemon-name,
+.dex-card .pokemon-name,
+.pokemon-card h3,
+.dex-card h3 {
+    font-size: clamp(0.68rem, 1vw, 1rem);
+    line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pokemon-card .pokemon-number,
+.dex-card .pokemon-number,
+.pokemon-number {
+    font-size: clamp(0.72rem, 1.05vw, 1.1rem);
+    line-height: 1.1;
+}
+
+/* Center the jump-to-box-one arrow */
+#jumpToBoxOneButton,
+#scrollTopButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+}
+
+/* Medium screens */
+@media (max-width: 1250px) {
+    .main-layout,
+    .layout,
+    .dex-layout,
+    .content-layout,
+    .app-shell,
+    .dex-page {
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 16px;
+    }
+
+    .pokemon-grid,
+    .box-grid,
+    .dex-grid,
+    .grid {
+        gap: 8px;
+    }
+}
+
+/* Small screens stack the panel instead of overlapping */
+@media (max-width: 950px) {
+    .main-layout,
+    .layout,
+    .dex-layout,
+    .content-layout,
+    .app-shell,
+    .dex-page {
+        display: block;
+    }
+
+    .selected-panel,
+    .info-panel,
+    .side-panel,
+    .pokemon-panel,
+    #selected-panel,
+    #info-panel {
+        position: relative;
+        top: auto;
+        width: 100%;
+        margin-top: 24px;
+    }
+
+    #jumpToBoxOneButton,
+    #scrollTopButton {
+        right: 24px;
+        bottom: 24px;
+    }
+}
+
+/* Phone layout */
+@media (max-width: 650px) {
+    .pokemon-grid,
+    .box-grid,
+    .dex-grid,
+    .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
