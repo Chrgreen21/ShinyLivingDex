@@ -895,3 +895,32 @@ body {
   z-index: 3;
 }
 
+
+
+
+/* Account sync UI */
+.account-panel {
+  padding: 16px 0 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(0, 194, 174, 0.32);
+}
+
+.account-panel h3 { margin: 0 0 8px; }
+
+.auth-status,
+.auth-message {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.auth-message {
+  min-height: 1.3em;
+  font-weight: 700;
+}
+
+.auth-message.error { color: #ffd2d2; }
+
+.auth-controls[hidden] { display: none; }
+
+.account-panel .settings-actions { margin-top: 10px; }

@@ -6,6 +6,7 @@ const MAX_POKEMON_ID = 1025;
 const STORAGE_KEY = "livingDexCaught";
 const ENCOUNTER_CACHE_KEY = "livingDexEncounterCache";
 const POKEMON_CACHE_KEY = "livingDexPokemonList";
+const CLOUD_SAVE_TABLE = "dex_saves";
 
 const REGIONS = [
   { key: "kanto", name: "Kanto", start: 1, end: 151 },
@@ -115,17 +116,43 @@ const PROFILE_STORAGE_KEY = "livingDexProfileSettings";
 const selectedPanelContent = document.getElementById("selectedPanelContent");
 const regionTabs = document.getElementById("regionTabs");
 
+const authStatus = document.getElementById("authStatus");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const signInBtn = document.getElementById("signInBtn");
+const signUpBtn = document.getElementById("signUpBtn");
+const googleSignInBtn = document.getElementById("googleSignInBtn");
+const signOutBtn = document.getElementById("signOutBtn");
+const syncSaveBtn = document.getElementById("syncSaveBtn");
+const loadCloudSaveBtn = document.getElementById("loadCloudSaveBtn");
+const signedOutControls = document.getElementById("signedOutControls");
+const signedInControls = document.getElementById("signedInControls");
+const authMessage = document.getElementById("authMessage");
+
+
 let pokemon = [];
 let caught = loadCaught();
 let selectedPokemonId = null;
 let encounterCache = loadEncounterCache();
+let cloudSaveTimer = null;
 
 function loadCaught() {
   return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
 }
 
+
+function scheduleCloudSave() {
+  if (!window.supabaseClient) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(async () => {
+    const user = await getCurrentUser();
+    if (user) await saveCloudDex(false);
+  }, 750);
+}
+
 function saveCaught() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(caught));
+  scheduleCloudSave();
 }
 
 function loadEncounterCache() {
@@ -678,7 +705,188 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+
+function setAuthMessage(message, isError = false) {
+  if (!authMessage) return;
+  authMessage.textContent = message || "";
+  authMessage.classList.toggle("error", Boolean(isError));
+}
+
+async function getCurrentUser() {
+  if (!window.supabaseClient) return null;
+  const { data, error } = await supabaseClient.auth.getUser();
+  if (error) return null;
+  return data.user || null;
+}
+
+function updateAuthUi(user) {
+  if (!authStatus) return;
+  if (user) {
+    authStatus.textContent = `Signed in as ${user.email || "Google account"}.`;
+    if (signedOutControls) signedOutControls.hidden = true;
+    if (signedInControls) signedInControls.hidden = false;
+  } else {
+    authStatus.textContent = "Not signed in. Your progress is saved only on this device.";
+    if (signedOutControls) signedOutControls.hidden = false;
+    if (signedInControls) signedInControls.hidden = true;
+  }
+}
+
+async function refreshAuthUi() {
+  const user = await getCurrentUser();
+  updateAuthUi(user);
+  return user;
+}
+
+async function saveCloudDex(showSuccess = true) {
+  setAuthMessage("");
+  const user = await getCurrentUser();
+  if (!user) {
+    setAuthMessage("Sign in before syncing.", true);
+    return;
+  }
+
+  const { error } = await supabaseClient.from(CLOUD_SAVE_TABLE).upsert({
+    user_id: user.id,
+    caught_json: caught || {},
+    settings_json: loadProfileSettings(),
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id" });
+
+  if (error) {
+    setAuthMessage(error.message, true);
+    return;
+  }
+
+  if (showSuccess) setAuthMessage("Cloud save synced.");
+}
+
+async function loadCloudDex(showMissingMessage = true) {
+  setAuthMessage("");
+  const user = await getCurrentUser();
+  if (!user) {
+    setAuthMessage("Sign in before loading a cloud save.", true);
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from(CLOUD_SAVE_TABLE)
+    .select("caught_json, settings_json, updated_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    setAuthMessage(error.message, true);
+    return;
+  }
+
+  if (!data) {
+    if (showMissingMessage) setAuthMessage("No cloud save found yet. Click Sync Save to upload this device.");
+    return;
+  }
+
+  caught = data.caught_json || {};
+  saveCaught();
+
+  if (data.settings_json) {
+    saveProfileSettings(data.settings_json);
+    if (typeof applyProfileSettings === "function") applyProfileSettings();
+  }
+
+  renderGrid();
+
+  if (selectedPokemonId !== null) {
+    const selectedMon = getPokemonById(selectedPokemonId);
+    if (selectedMon) updateSelectedPanel(selectedMon);
+  }
+
+  setAuthMessage("Cloud save loaded.");
+}
+
+async function signUpWithEmail() {
+  setAuthMessage("");
+  const email = authEmail?.value.trim();
+  const password = authPassword?.value;
+  if (!email || !password) {
+    setAuthMessage("Enter an email and password first.", true);
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) {
+    setAuthMessage(error.message, true);
+    return;
+  }
+
+  setAuthMessage("Account created. Check your email if Supabase requires confirmation.");
+  await refreshAuthUi();
+  if (data.user) await saveCloudDex(true);
+}
+
+async function signInWithEmail() {
+  setAuthMessage("");
+  const email = authEmail?.value.trim();
+  const password = authPassword?.value;
+  if (!email || !password) {
+    setAuthMessage("Enter an email and password first.", true);
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    setAuthMessage(error.message, true);
+    return;
+  }
+
+  setAuthMessage("Signed in.");
+  await refreshAuthUi();
+  await loadCloudDex(false);
+}
+
+async function signInWithGoogle() {
+  setAuthMessage("");
+  const redirectTo = window.location.origin + window.location.pathname;
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo }
+  });
+  if (error) setAuthMessage(error.message, true);
+}
+
+async function signOut() {
+  setAuthMessage("");
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    setAuthMessage(error.message, true);
+    return;
+  }
+  setAuthMessage("Signed out. Local save is still on this device.");
+  await refreshAuthUi();
+}
+
+function setupAuthHandlers() {
+  if (!window.supabaseClient) {
+    setAuthMessage("Supabase config failed to load.", true);
+    return;
+  }
+
+  if (signUpBtn) signUpBtn.addEventListener("click", signUpWithEmail);
+  if (signInBtn) signInBtn.addEventListener("click", signInWithEmail);
+  if (googleSignInBtn) googleSignInBtn.addEventListener("click", signInWithGoogle);
+  if (signOutBtn) signOutBtn.addEventListener("click", signOut);
+  if (syncSaveBtn) syncSaveBtn.addEventListener("click", () => saveCloudDex(true));
+  if (loadCloudSaveBtn) loadCloudSaveBtn.addEventListener("click", () => loadCloudDex(true));
+
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    updateAuthUi(session?.user || null);
+    if (event === "SIGNED_IN") await loadCloudDex(false);
+  });
+
+  refreshAuthUi();
+}
+
 async function init() {
+  setupAuthHandlers();
   applyProfileSettings();
   boxContainer.innerHTML = `<p class="loading-message">Loading Pokémon...</p>`;
   pokemon = await loadPokemonList();

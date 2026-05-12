@@ -45,6 +45,40 @@
         <button id="closeSettingsBtn" type="button" class="icon-button" aria-label="Close settings">×</button>
       </div>
 
+      
+      <div class="account-panel">
+        <h3>Account Sync</h3>
+        <p id="authStatus" class="auth-status">Not signed in. Your progress is saved only on this device.</p>
+
+        <div id="signedOutControls" class="auth-controls">
+          <label class="settings-field">
+            <span>Email</span>
+            <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+          </label>
+
+          <label class="settings-field">
+            <span>Password</span>
+            <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password" />
+          </label>
+
+          <div class="settings-actions">
+            <button id="signInBtn" type="button">Sign In</button>
+            <button id="signUpBtn" type="button" class="secondary-button">Create Account</button>
+            <button id="googleSignInBtn" type="button" class="secondary-button">Sign In With Google</button>
+          </div>
+        </div>
+
+        <div id="signedInControls" class="auth-controls" hidden>
+          <div class="settings-actions">
+            <button id="syncSaveBtn" type="button">Sync Save</button>
+            <button id="loadCloudSaveBtn" type="button" class="secondary-button">Load Cloud Save</button>
+            <button id="signOutBtn" type="button" class="secondary-button">Sign Out</button>
+          </div>
+        </div>
+
+        <p id="authMessage" class="auth-message"></p>
+      </div>
+
       <label class="settings-field">
         <span>Dex title</span>
         <input id="settingsDexTitle" type="text" maxlength="40" value="Shiny Living Dex" />
@@ -69,6 +103,8 @@
   </div>
 
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="app.js"></script>
 
 <button id="scrollTopButton" title="Back to Box 1">↑</button>
