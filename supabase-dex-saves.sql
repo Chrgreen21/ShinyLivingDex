@@ -24,3 +24,19 @@ create policy "Users can update own save"
 on dex_saves for update
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+
+
+-- Required for the in-app Delete Account button.
+create or replace function delete_current_user()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+revoke all on function delete_current_user() from public;
+grant execute on function delete_current_user() to authenticated;

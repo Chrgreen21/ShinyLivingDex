@@ -924,3 +924,41 @@ body {
 .auth-controls[hidden] { display: none; }
 
 .account-panel .settings-actions { margin-top: 10px; }
+
+
+
+/* Username, scrollable settings, and fixed selected pane */
+.account-username-line {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+.account-username-line strong {
+  color: var(--text);
+}
+
+.settings-overlay {
+  overflow-y: auto;
+  align-items: start;
+}
+
+.settings-modal {
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  margin: 18px auto;
+}
+
+.selected-panel {
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.selected-panel::-webkit-scrollbar,
+.settings-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.selected-panel::-webkit-scrollbar-thumb,
+.settings-modal::-webkit-scrollbar-thumb {
+  background: rgba(120, 255, 238, 0.35);
+  border-radius: 999px;
+}

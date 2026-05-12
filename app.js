@@ -128,6 +128,11 @@ const loadCloudSaveBtn = document.getElementById("loadCloudSaveBtn");
 const signedOutControls = document.getElementById("signedOutControls");
 const signedInControls = document.getElementById("signedInControls");
 const authMessage = document.getElementById("authMessage");
+const authUsername = document.getElementById("authUsername");
+const settingsUsername = document.getElementById("settingsUsername");
+const accountUsernameText = document.getElementById("accountUsernameText");
+const saveUsernameBtn = document.getElementById("saveUsernameBtn");
+const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
 
 let pokemon = [];
@@ -306,12 +311,11 @@ function saveProfileSettings(settings) {
 function applyProfileSettings() {
   const settings = loadProfileSettings();
   const title = settings.title || "Shiny Living Dex";
-  const subtitle = settings.subtitle || "u:Chrgreen21";
+  const subtitle = getStoredUsername(settings) ? `u:${getStoredUsername(settings)}` : "guest";
 
   if (dexTitle) dexTitle.textContent = title;
   if (dexSubtitle) dexSubtitle.textContent = subtitle;
   if (settingsDexTitle) settingsDexTitle.value = title;
-  if (settingsDexSubtitle) settingsDexSubtitle.value = subtitle;
 }
 
 function openSettings() {
@@ -746,6 +750,7 @@ function updateAuthUi(user) {
 async function refreshAuthUi() {
   const user = await getCurrentUser();
   updateAuthUi(user);
+  await applyUsernameForUser(user);
   return user;
 }
 
@@ -802,6 +807,7 @@ async function loadCloudDex(showMissingMessage = true) {
   if (data.settings_json) {
     saveProfileSettings(data.settings_json);
     if (typeof applyProfileSettings === "function") applyProfileSettings();
+    setProfileUsernameText(data.settings_json.username);
   }
 
   renderGrid();
@@ -814,6 +820,109 @@ async function loadCloudDex(showMissingMessage = true) {
   setAuthMessage("Cloud save loaded.");
 }
 
+
+function sanitizeUsername(username) {
+  return String(username || "").trim().replace(/^u:/i, "").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 24);
+}
+
+function getStoredUsername(settings) {
+  return sanitizeUsername(settings && settings.username);
+}
+
+function setProfileUsernameText(username) {
+  const clean = sanitizeUsername(username);
+  const display = clean ? `u:${clean}` : "guest";
+  if (dexSubtitle) dexSubtitle.textContent = display;
+  if (accountUsernameText) accountUsernameText.textContent = display;
+  if (settingsUsername) settingsUsername.value = clean;
+}
+
+async function fetchCloudSettingsForUser(userId) {
+  if (!userId || !getSupabaseClient()) return null;
+  const { data, error } = await supabaseClient
+    .from(CLOUD_SAVE_TABLE)
+    .select("settings_json")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.settings_json || {};
+}
+
+async function applyUsernameForUser(user) {
+  if (!user) {
+    setProfileUsernameText("");
+    return;
+  }
+  const cloudSettings = await fetchCloudSettingsForUser(user.id);
+  const localSettings = loadProfileSettings();
+  const username =
+    getStoredUsername(cloudSettings) ||
+    getStoredUsername(localSettings) ||
+    getStoredUsername(user.user_metadata) ||
+    (user.email ? user.email.split("@")[0] : "");
+  saveProfileSettings({ ...localSettings, ...(cloudSettings || {}), username });
+  setProfileUsernameText(username);
+}
+
+async function saveUsername() {
+  const user = await getCurrentUser();
+  if (!user) {
+    setAuthMessage("Sign in before saving a username.", true);
+    return;
+  }
+  const username = sanitizeUsername(settingsUsername?.value || authUsername?.value);
+  if (!username) {
+    setAuthMessage("Enter a username using letters, numbers, or underscores.", true);
+    return;
+  }
+  const settings_json = { ...loadProfileSettings(), username };
+  saveProfileSettings(settings_json);
+  setProfileUsernameText(username);
+  const { error } = await supabaseClient.from(CLOUD_SAVE_TABLE).upsert({
+    user_id: user.id,
+    caught_json: caught || {},
+    settings_json,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id" });
+  if (error) {
+    setAuthMessage(error.message, true);
+    return;
+  }
+  setAuthMessage("Username saved.");
+}
+
+async function deleteAccount() {
+  const user = await getCurrentUser();
+  if (!user) {
+    setAuthMessage("No signed-in account to delete.", true);
+    return;
+  }
+  if (!confirm("Delete this account and its cloud save? This cannot be undone.")) return;
+
+  const { error: saveError } = await supabaseClient.from(CLOUD_SAVE_TABLE).delete().eq("user_id", user.id);
+  if (saveError) {
+    setAuthMessage(saveError.message, true);
+    return;
+  }
+
+  const { error: rpcError } = await supabaseClient.rpc("delete_current_user");
+  if (rpcError) {
+    setAuthMessage("Cloud save deleted, but add the delete_current_user SQL function before the login account itself can be removed.", true);
+    await supabaseClient.auth.signOut();
+    await refreshAuthUi();
+    return;
+  }
+
+  caught = {};
+  saveCaught();
+  saveProfileSettings({});
+  setProfileUsernameText("");
+  renderGrid();
+  await supabaseClient.auth.signOut();
+  await refreshAuthUi();
+  setAuthMessage("Account deleted.");
+}
+
 async function signUpWithEmail() {
   setAuthMessage("");
   const email = authEmail?.value.trim();
@@ -823,12 +932,24 @@ async function signUpWithEmail() {
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  const username = sanitizeUsername(authUsername?.value || email.split("@")[0]);
+  if (!username) {
+    setAuthMessage("Enter a username using letters, numbers, or underscores.", true);
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: { data: { username } }
+  });
   if (error) {
     setAuthMessage(error.message, true);
     return;
   }
 
+  saveProfileSettings({ ...loadProfileSettings(), username });
+  setProfileUsernameText(username);
   setAuthMessage("Account created. Check your email if Supabase requires confirmation.");
   await refreshAuthUi();
   if (data.user) await saveCloudDex(true);
@@ -888,6 +1009,8 @@ function setupAuthHandlers() {
   if (signOutBtn) signOutBtn.addEventListener("click", signOut);
   if (syncSaveBtn) syncSaveBtn.addEventListener("click", () => saveCloudDex(true));
   if (loadCloudSaveBtn) loadCloudSaveBtn.addEventListener("click", () => loadCloudDex(true));
+  if (saveUsernameBtn) saveUsernameBtn.addEventListener("click", saveUsername);
+  if (deleteAccountBtn) deleteAccountBtn.addEventListener("click", deleteAccount);
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     updateAuthUi(session?.user || null);

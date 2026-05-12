@@ -12,7 +12,7 @@
       <header class="top-bar">
         <div>
           <h1 id="dexTitle">Shiny Living Dex</h1>
-          <p id="dexSubtitle">u:Chrgreen21</p>
+          <p id="dexSubtitle">guest</p>
         </div>
 
         <div class="controls">
@@ -52,6 +52,11 @@
 
         <div id="signedOutControls" class="auth-controls">
           <label class="settings-field">
+            <span>Username</span>
+            <input id="authUsername" type="text" autocomplete="username" placeholder="Chrgreen21" maxlength="24" />
+          </label>
+
+          <label class="settings-field">
             <span>Email</span>
             <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" />
           </label>
@@ -69,7 +74,13 @@
         </div>
 
         <div id="signedInControls" class="auth-controls" hidden>
+          <p class="account-username-line">Username: <strong id="accountUsernameText">guest</strong></p>
+          <label class="settings-field">
+            <span>Change username</span>
+            <input id="settingsUsername" type="text" autocomplete="username" placeholder="Chrgreen21" maxlength="24" />
+          </label>
           <div class="settings-actions">
+            <button id="saveUsernameBtn" type="button">Save Username</button>
             <button id="syncSaveBtn" type="button">Sync Save</button>
             <button id="loadCloudSaveBtn" type="button" class="secondary-button">Load Cloud Save</button>
             <button id="signOutBtn" type="button" class="secondary-button">Sign Out</button>
@@ -84,11 +95,6 @@
         <input id="settingsDexTitle" type="text" maxlength="40" value="Shiny Living Dex" />
       </label>
 
-      <label class="settings-field">
-        <span>Profile text</span>
-        <input id="settingsDexSubtitle" type="text" maxlength="60" value="u:Chrgreen21" />
-      </label>
-
       <div class="settings-actions">
         <button id="saveSettingsBtn" type="button">Save Settings</button>
         <button id="resetSettingsBtn" type="button" class="secondary-button">Reset Text</button>
@@ -98,6 +104,7 @@
         <h3>Save Data</h3>
         <p>This clears only the caught/uncaught save stored in this browser.</p>
         <button id="clearSaveBtn" type="button" class="danger-button">Clear Caught Save</button>
+        <button id="deleteAccountBtn" type="button" class="danger-button">Delete Account</button>
       </div>
     </section>
   </div>
