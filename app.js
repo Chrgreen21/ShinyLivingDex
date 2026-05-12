@@ -142,7 +142,7 @@ function loadCaught() {
 
 
 function scheduleCloudSave() {
-  if (!window.supabaseClient) return;
+  if (!getSupabaseClient()) return;
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(async () => {
     const user = await getCurrentUser();
@@ -706,6 +706,17 @@ document.addEventListener("keydown", (event) => {
 });
 
 
+
+var supabaseClient = window.supabaseClient;
+
+function getSupabaseClient() {
+  return window.supabaseClient || null;
+}
+
+function getMissingSupabaseMessage() {
+  return "Supabase could not load. Refresh the page, then check that supabase-config.js and the Supabase CDN script uploaded to GitHub Pages.";
+}
+
 function setAuthMessage(message, isError = false) {
   if (!authMessage) return;
   authMessage.textContent = message || "";
@@ -865,8 +876,9 @@ async function signOut() {
 }
 
 function setupAuthHandlers() {
-  if (!window.supabaseClient) {
-    setAuthMessage("Supabase config failed to load.", true);
+  const client = getSupabaseClient();
+  if (!client) {
+    setAuthMessage(getMissingSupabaseMessage(), true);
     return;
   }
 
