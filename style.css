@@ -949,7 +949,7 @@ body {
 
 .selected-panel {
   max-height: calc(100vh - 48px);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .selected-panel::-webkit-scrollbar,
@@ -962,3 +962,94 @@ body {
   background: rgba(120, 255, 238, 0.35);
   border-radius: 999px;
 }
+
+
+/* Selected panel hard scale fix: no internal scrolling */
+.selected-panel {
+  height: calc(100vh - 48px);
+  max-height: calc(100vh - 48px);
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.selected-panel h2 {
+  flex: 0 0 auto;
+  font-size: clamp(1rem, 2vh, 1.25rem);
+  margin-bottom: clamp(8px, 1.2vh, 16px);
+}
+
+#selectedPanelContent {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.selected-sprite-frame {
+  flex: 0 0 auto;
+  width: min(100%, 210px);
+  max-height: clamp(95px, 20vh, 170px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.selected-artwork {
+  max-width: clamp(88px, 15vh, 145px);
+  max-height: clamp(88px, 15vh, 145px);
+}
+
+#selectedPanelContent h3 {
+  font-size: clamp(1.15rem, 2.8vh, 2rem);
+  margin-top: clamp(6px, 1vh, 14px);
+  margin-bottom: clamp(3px, 0.7vh, 8px);
+}
+
+#selectedPanelContent .pokemon-number {
+  font-size: clamp(0.9rem, 1.8vh, 1.25rem);
+  margin-bottom: clamp(4px, 0.8vh, 10px);
+}
+
+.status-pill {
+  transform: scale(clamp(0.78, 1.45vh, 1));
+  transform-origin: center;
+  margin-top: clamp(2px, 0.6vh, 8px);
+  margin-bottom: clamp(4px, 0.8vh, 12px);
+}
+
+#encounterInfo {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+#selectedPanelContent h4 {
+  font-size: clamp(0.86rem, 1.55vh, 1.05rem);
+  margin-top: clamp(6px, 0.9vh, 12px);
+  margin-bottom: clamp(4px, 0.7vh, 8px);
+}
+
+.game-entry {
+  margin-bottom: clamp(4px, 0.75vh, 10px);
+}
+
+.game-entry h5 {
+  font-size: clamp(0.72rem, 1.35vh, 0.95rem);
+  margin-bottom: clamp(1px, 0.4vh, 5px);
+}
+
+.game-entry ul {
+  font-size: clamp(0.65rem, 1.25vh, 0.86rem);
+  line-height: 1.12;
+}
+
+.game-entry li {
+  margin-bottom: 0;
+}
+
+/* Prevent long location lists from pushing the panel off-screen */
+.game-entry:nth-of-type(n+5) {
+  display: none;
+}
+
