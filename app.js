@@ -107,7 +107,6 @@ const settingsBtn = document.getElementById("settingsBtn");
 const settingsOverlay = document.getElementById("settingsOverlay");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
-const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const settingsDexTitle = document.getElementById("settingsDexTitle");
 const settingsDexSubtitle = document.getElementById("settingsDexSubtitle");
 const dexTitle = document.getElementById("dexTitle");
@@ -119,6 +118,12 @@ const regionTabs = document.getElementById("regionTabs");
 const authStatus = document.getElementById("authStatus");
 const authEmail = document.getElementById("authEmail");
 const authPassword = document.getElementById("authPassword");
+const showSignInBtn = document.getElementById("showSignInBtn");
+const showCreateAccountBtn = document.getElementById("showCreateAccountBtn");
+const cancelAuthFormBtn = document.getElementById("cancelAuthFormBtn");
+const authChoiceControls = document.getElementById("authChoiceControls");
+const authForm = document.getElementById("authForm");
+const usernameField = document.getElementById("usernameField");
 const signInBtn = document.getElementById("signInBtn");
 const signUpBtn = document.getElementById("signUpBtn");
 const googleSignInBtn = document.getElementById("googleSignInBtn");
@@ -144,7 +149,11 @@ let encounterCache = loadEncounterCache();
 let cloudSaveTimer = null;
 
 function loadCaught() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  try {
+    return migrateCaughtSave(JSON.parse(localStorage.getItem(STORAGE_KEY)) || {});
+  } catch (error) {
+    return {};
+  }
 }
 
 
@@ -277,8 +286,45 @@ function getBoxIndexForPokemonId(id) {
   return Math.floor((id - 1) / BOX_SIZE);
 }
 
+
+function normalizeFormKey(form) {
+  return String(form || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^base$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getCaughtKey(mon) {
+  const form = normalizeFormKey(mon?.form || mon?.formKey || mon?.form_name || mon?.variant);
+  return form ? `${mon.id}-${form}` : String(mon.id);
+}
+
+function getCaughtValue(mon) {
+  return Boolean(caught[getCaughtKey(mon)]);
+}
+
+function setCaughtValue(mon, value) {
+  const key = getCaughtKey(mon);
+  if (value) {
+    caught[key] = true;
+  } else {
+    delete caught[key];
+  }
+}
+
+function migrateCaughtSave(rawCaught) {
+  const migrated = {};
+  Object.entries(rawCaught || {}).forEach(([key, value]) => {
+    if (!value) return;
+    migrated[String(key)] = true;
+  });
+  return migrated;
+}
+
 function updateCaughtCount() {
-  const total = Object.values(caught).filter(Boolean).length;
+  const total = pokemon.filter((mon) => getCaughtValue(mon)).length;
   caughtCount.textContent = `${total} / ${pokemon.length} caught`;
 }
 
@@ -336,20 +382,14 @@ function closeSettings() {
 
 function handleSaveSettings() {
   const title = settingsDexTitle?.value.trim() || "Shiny Living Dex";
-  const subtitle = settingsDexSubtitle?.value.trim() || "u:Chrgreen21";
-
-  saveProfileSettings({ title, subtitle });
+  saveProfileSettings({ ...loadProfileSettings(), title });
   applyProfileSettings();
+  scheduleCloudSave();
+  setAuthMessage("Dex name updated.");
   closeSettings();
 }
 
-function handleResetSettings() {
-  saveProfileSettings({
-    title: "Shiny Living Dex",
-    subtitle: "u:Chrgreen21"
-  });
-  applyProfileSettings();
-}
+
 
 function renderRegionTabs() {
   if (!regionTabs) return;
@@ -382,7 +422,7 @@ function renderPokemonCell(mon) {
   cell.dataset.pokemonId = mon.id;
   cell.setAttribute("aria-label", `${mon.name} ${formatDexNumber(mon.id)}`);
 
-  if (caught[mon.id]) {
+  if (getCaughtValue(mon)) {
     cell.classList.add("caught");
   }
 
@@ -422,9 +462,9 @@ function renderPokemonCell(mon) {
   });
 
   cell.addEventListener("click", () => {
-    caught[mon.id] = !caught[mon.id];
+    setCaughtValue(mon, !getCaughtValue(mon));
     saveCaught();
-    cell.classList.toggle("caught", caught[mon.id]);
+    cell.classList.toggle("caught", getCaughtValue(mon));
     updateCaughtCount();
     selectedPokemonId = mon.id;
     updateSelectedPanel(mon);
@@ -693,9 +733,6 @@ if (saveSettingsBtn) {
   saveSettingsBtn.addEventListener("click", handleSaveSettings);
 }
 
-if (resetSettingsBtn) {
-  resetSettingsBtn.addEventListener("click", handleResetSettings);
-}
 
 if (settingsOverlay) {
   settingsOverlay.addEventListener("click", (event) => {
@@ -723,6 +760,27 @@ function getMissingSupabaseMessage() {
   return "Supabase could not load. Refresh the page, then check that supabase-config.js and the Supabase CDN script uploaded to GitHub Pages.";
 }
 
+
+let authMode = "signin";
+
+function showAuthForm(mode) {
+  authMode = mode;
+
+  if (authChoiceControls) authChoiceControls.hidden = true;
+  if (authForm) authForm.hidden = false;
+  if (usernameField) usernameField.hidden = mode !== "signup";
+  if (signInBtn) signInBtn.hidden = mode !== "signin";
+  if (signUpBtn) signUpBtn.hidden = mode !== "signup";
+  setAuthMessage("");
+}
+
+function hideAuthForm() {
+  if (authChoiceControls) authChoiceControls.hidden = false;
+  if (authForm) authForm.hidden = true;
+  if (authPassword) authPassword.value = "";
+  setAuthMessage("");
+}
+
 function setAuthMessage(message, isError = false) {
   if (!authMessage) return;
   authMessage.textContent = message || "";
@@ -741,10 +799,13 @@ function updateAuthUi(user) {
   if (user) {
     authStatus.textContent = `Signed in as ${user.email || "Google account"}.`;
     if (signedOutControls) signedOutControls.hidden = true;
+    hideAuthForm();
     if (signedInControls) signedInControls.hidden = false;
   } else {
     authStatus.textContent = "Not signed in. Your progress is saved only on this device.";
     if (signedOutControls) signedOutControls.hidden = false;
+    if (authForm) authForm.hidden = true;
+    if (authChoiceControls) authChoiceControls.hidden = false;
     if (signedInControls) signedInControls.hidden = true;
   }
 }
@@ -799,7 +860,7 @@ async function loadCloudDex(showMissingMessage = true) {
   }
 
   if (!data) {
-    if (showMissingMessage) setAuthMessage("No cloud save found yet. Click Sync Save to upload this device.");
+    if (showMissingMessage) setAuthMessage("No cloud save found yet. Your local save will upload automatically after a change.");
     return;
   }
 
@@ -1040,6 +1101,7 @@ function parseCsvLine(line) {
   return values;
 }
 
+
 function exportCaughtCsv() {
   if (!pokemon || !pokemon.length) {
     setAuthMessage("Pokémon list is not loaded yet.", true);
@@ -1047,15 +1109,34 @@ function exportCaughtCsv() {
   }
 
   const rows = [
-    ["dex_number", "pokemon_id", "name", "caught"]
+    ["save_key", "dex_number", "pokemon_id", "name", "caught"]
   ];
 
   pokemon.forEach((mon) => {
+    const saveKey = getCaughtKey(mon);
     rows.push([
+      saveKey,
       formatDexNumber(mon.id),
       mon.id,
       mon.name,
-      caught[mon.id] ? "true" : "false"
+      caught[saveKey] ? "true" : "false"
+    ]);
+  });
+
+  // Include saved form keys that are not currently shown in the main grid.
+  Object.keys(caught).forEach((key) => {
+    if (!caught[key]) return;
+    const alreadyIncluded = rows.some((row, index) => index > 0 && row[0] === key);
+    if (alreadyIncluded) return;
+
+    const baseId = Number(String(key).split("-")[0]);
+    const mon = getPokemonById(baseId);
+    rows.push([
+      key,
+      baseId ? formatDexNumber(baseId) : "",
+      baseId || "",
+      mon ? mon.name : "",
+      "true"
     ]);
   });
 
@@ -1096,27 +1177,22 @@ async function importCaughtCsv(file) {
   }
 
   const header = parseCsvLine(lines[0]).map((item) => item.trim().toLowerCase());
+  const saveKeyIndex = header.indexOf("save_key");
   const idIndex = header.indexOf("pokemon_id");
   const dexIndex = header.indexOf("dex_number");
   const caughtIndex = header.indexOf("caught");
 
-  if (caughtIndex === -1 || (idIndex === -1 && dexIndex === -1)) {
-    setAuthMessage("CSV needs pokemon_id or dex_number and caught columns.", true);
+  if (caughtIndex === -1 || (saveKeyIndex === -1 && idIndex === -1 && dexIndex === -1)) {
+    setAuthMessage("CSV needs save_key and caught columns, or old pokemon_id/dex_number and caught columns.", true);
     return;
   }
 
-  const importedCaught = { ...caught };
+  const importedCaught = {};
   let changedCount = 0;
 
   for (let i = 1; i < lines.length; i++) {
     const values = parseCsvLine(lines[i]);
-    const rawId = idIndex !== -1 ? values[idIndex] : values[dexIndex];
     const rawCaught = String(values[caughtIndex] || "").trim().toLowerCase();
-
-    const pokemonId = Number(String(rawId).replace("#", ""));
-    if (!pokemonId || pokemonId < 1 || pokemonId > MAX_POKEMON_ID) {
-      continue;
-    }
 
     const isCaught =
       rawCaught === "true" ||
@@ -1135,10 +1211,30 @@ async function importCaughtCsv(file) {
       continue;
     }
 
-    if (isCaught) {
-      importedCaught[pokemonId] = true;
+    let saveKey = "";
+
+    if (saveKeyIndex !== -1 && values[saveKeyIndex]) {
+      saveKey = String(values[saveKeyIndex]).trim();
     } else {
-      delete importedCaught[pokemonId];
+      const rawId = idIndex !== -1 ? values[idIndex] : values[dexIndex];
+      const pokemonId = Number(String(rawId).replace("#", ""));
+      if (!pokemonId || pokemonId < 1 || pokemonId > MAX_POKEMON_ID) {
+        continue;
+      }
+      saveKey = String(pokemonId);
+    }
+
+    saveKey = saveKey
+      .replace(/^#/, "")
+      .trim()
+      .toLowerCase();
+
+    if (!/^\d{1,4}(-[a-z0-9]+)*$/.test(saveKey)) {
+      continue;
+    }
+
+    if (isCaught) {
+      importedCaught[saveKey] = true;
     }
 
     changedCount++;
@@ -1153,8 +1249,9 @@ async function importCaughtCsv(file) {
     if (selectedMon) updateSelectedPanel(selectedMon);
   }
 
-  setAuthMessage(`CSV imported. Updated ${changedCount} Pokémon.`);
+  setAuthMessage(`CSV imported. Updated ${changedCount} rows.`);
 }
+
 
 function setupAuthHandlers() {
   const client = getSupabaseClient();
@@ -1163,12 +1260,13 @@ function setupAuthHandlers() {
     return;
   }
 
+  if (showSignInBtn) showSignInBtn.addEventListener("click", () => showAuthForm("signin"));
+  if (showCreateAccountBtn) showCreateAccountBtn.addEventListener("click", () => showAuthForm("signup"));
+  if (cancelAuthFormBtn) cancelAuthFormBtn.addEventListener("click", hideAuthForm);
   if (signUpBtn) signUpBtn.addEventListener("click", signUpWithEmail);
   if (signInBtn) signInBtn.addEventListener("click", signInWithEmail);
   if (googleSignInBtn) googleSignInBtn.addEventListener("click", signInWithGoogle);
   if (signOutBtn) signOutBtn.addEventListener("click", signOut);
-  if (syncSaveBtn) syncSaveBtn.addEventListener("click", () => saveCloudDex(true));
-  if (loadCloudSaveBtn) loadCloudSaveBtn.addEventListener("click", () => loadCloudDex(true));
   if (saveUsernameBtn) saveUsernameBtn.addEventListener("click", saveUsername);
   if (deleteAccountBtn) deleteAccountBtn.addEventListener("click", deleteAccount);
   if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportCaughtCsv);

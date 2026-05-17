@@ -45,44 +45,51 @@
         <button id="closeSettingsBtn" type="button" class="icon-button" aria-label="Close settings">×</button>
       </div>
 
-      
       <div class="account-panel">
         <h3>Account Sync</h3>
         <p id="authStatus" class="auth-status">Not signed in. Your progress is saved only on this device.</p>
 
         <div id="signedOutControls" class="auth-controls">
-          <label class="settings-field">
-            <span>Username</span>
-            <input id="authUsername" type="text" autocomplete="username" placeholder="Chrgreen21" maxlength="24" />
-          </label>
-
-          <label class="settings-field">
-            <span>Email</span>
-            <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" />
-          </label>
-
-          <label class="settings-field">
-            <span>Password</span>
-            <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password" />
-          </label>
-
-          <div class="settings-actions">
-            <button id="signInBtn" type="button">Sign In</button>
-            <button id="signUpBtn" type="button" class="secondary-button">Create Account</button>
+          <div id="authChoiceControls" class="settings-actions">
+            <button id="showSignInBtn" type="button">Sign In</button>
+            <button id="showCreateAccountBtn" type="button" class="secondary-button">Create Account</button>
             <button id="googleSignInBtn" type="button" class="secondary-button">Sign In With Google</button>
+          </div>
+
+          <div id="authForm" class="auth-form" hidden>
+            <label id="usernameField" class="settings-field" hidden>
+              <span>Username</span>
+              <input id="authUsername" type="text" autocomplete="username" placeholder="Chrgreen21" maxlength="24" />
+            </label>
+
+            <label class="settings-field">
+              <span>Email</span>
+              <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" />
+            </label>
+
+            <label class="settings-field">
+              <span>Password</span>
+              <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password" />
+            </label>
+
+            <div class="settings-actions">
+              <button id="signInBtn" type="button">Sign In</button>
+              <button id="signUpBtn" type="button" class="secondary-button">Create Account</button>
+              <button id="cancelAuthFormBtn" type="button" class="secondary-button">Cancel</button>
+            </div>
           </div>
         </div>
 
         <div id="signedInControls" class="auth-controls" hidden>
           <p class="account-username-line">Username: <strong id="accountUsernameText">guest</strong></p>
+
           <label class="settings-field">
             <span>Change username</span>
             <input id="settingsUsername" type="text" autocomplete="username" placeholder="Chrgreen21" maxlength="24" />
           </label>
+
           <div class="settings-actions">
             <button id="saveUsernameBtn" type="button">Save Username</button>
-            <button id="syncSaveBtn" type="button">Sync Save</button>
-            <button id="loadCloudSaveBtn" type="button" class="secondary-button">Load Cloud Save</button>
             <button id="signOutBtn" type="button" class="secondary-button">Sign Out</button>
           </div>
         </div>
@@ -90,19 +97,19 @@
         <p id="authMessage" class="auth-message"></p>
       </div>
 
+
       <label class="settings-field">
         <span>Dex title</span>
         <input id="settingsDexTitle" type="text" maxlength="40" value="Shiny Living Dex" />
       </label>
 
       <div class="settings-actions">
-        <button id="saveSettingsBtn" type="button">Save Settings</button>
-        <button id="resetSettingsBtn" type="button" class="secondary-button">Reset Text</button>
+        <button id="saveSettingsBtn" type="button">Change Name</button>
       </div>
 
       <div class="settings-danger-zone">
         <h3>Save Data</h3>
-        <p>This clears only the caught/uncaught save stored in this browser.</p>
+        <p>Import, export, or clear the save stored in this browser.</p>
         <button id="exportCsvBtn" type="button" class="secondary-button">Export CSV</button>
         <label class="csv-import-label">
           Import CSV

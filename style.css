@@ -1076,3 +1076,74 @@ body {
   display: none;
 }
 
+
+
+
+/* Auto account UI cleanup */
+.auth-form[hidden],
+#authChoiceControls[hidden],
+#usernameField[hidden] {
+  display: none;
+}
+
+.account-panel #deleteAccountBtn {
+  margin-left: auto;
+}
+
+/* Keep settings scrollable */
+.settings-overlay {
+  overflow-y: auto;
+  align-items: start;
+}
+
+.settings-modal {
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  margin: 18px auto;
+}
+
+/* Selected panel scales to viewport without its own scrollbar */
+.selected-panel {
+  height: calc(100vh - 48px);
+  max-height: calc(100vh - 48px);
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+}
+
+#selectedPanelContent {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.selected-sprite-frame {
+  max-height: clamp(95px, 20vh, 170px);
+}
+
+.selected-artwork {
+  max-width: clamp(88px, 15vh, 145px);
+  max-height: clamp(88px, 15vh, 145px);
+}
+
+#encounterInfo {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.game-entry {
+  margin-bottom: clamp(4px, 0.75vh, 10px);
+}
+
+.game-entry h5 {
+  font-size: clamp(0.72rem, 1.35vh, 0.95rem);
+}
+
+.game-entry ul {
+  font-size: clamp(0.65rem, 1.25vh, 0.86rem);
+  line-height: 1.12;
+}
+
+.game-entry:nth-of-type(n+5) {
+  display: none;
+}
