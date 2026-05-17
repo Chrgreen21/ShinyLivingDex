@@ -1053,3 +1053,26 @@ body {
   display: none;
 }
 
+
+/* CSV import/export controls */
+.csv-import-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-soft);
+  background: rgba(0, 65, 58, 0.9);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.csv-import-label:hover {
+  filter: brightness(1.12);
+}
+
+.csv-import-label input {
+  display: none;
+}
+

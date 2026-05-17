@@ -133,6 +133,8 @@ const settingsUsername = document.getElementById("settingsUsername");
 const accountUsernameText = document.getElementById("accountUsernameText");
 const saveUsernameBtn = document.getElementById("saveUsernameBtn");
 const deleteAccountBtn = document.getElementById("deleteAccountBtn");
+const exportCsvBtn = document.getElementById("exportCsvBtn");
+const importCsvInput = document.getElementById("importCsvInput");
 
 
 let pokemon = [];
@@ -996,6 +998,164 @@ async function signOut() {
   await refreshAuthUi();
 }
 
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function parseCsvLine(line) {
+  const values = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const next = line[i + 1];
+
+    if (char === '"' && inQuotes && next === '"') {
+      current += '"';
+      i++;
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      values.push(current);
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  values.push(current);
+  return values;
+}
+
+function exportCaughtCsv() {
+  if (!pokemon || !pokemon.length) {
+    setAuthMessage("Pokémon list is not loaded yet.", true);
+    return;
+  }
+
+  const rows = [
+    ["dex_number", "pokemon_id", "name", "caught"]
+  ];
+
+  pokemon.forEach((mon) => {
+    rows.push([
+      formatDexNumber(mon.id),
+      mon.id,
+      mon.name,
+      caught[mon.id] ? "true" : "false"
+    ]);
+  });
+
+  const csv = rows
+    .map((row) => row.map(csvEscape).join(","))
+    .join("\n");
+
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+
+  link.href = url;
+  link.download = `shiny-living-dex-save-${date}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  URL.revokeObjectURL(url);
+  setAuthMessage("CSV exported.");
+}
+
+async function importCaughtCsv(file) {
+  if (!file) return;
+
+  const text = await file.text();
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) {
+    setAuthMessage("CSV file was empty.", true);
+    return;
+  }
+
+  const header = parseCsvLine(lines[0]).map((item) => item.trim().toLowerCase());
+  const idIndex = header.indexOf("pokemon_id");
+  const dexIndex = header.indexOf("dex_number");
+  const caughtIndex = header.indexOf("caught");
+
+  if (caughtIndex === -1 || (idIndex === -1 && dexIndex === -1)) {
+    setAuthMessage("CSV needs pokemon_id or dex_number and caught columns.", true);
+    return;
+  }
+
+  const importedCaught = { ...caught };
+  let changedCount = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCsvLine(lines[i]);
+    const rawId = idIndex !== -1 ? values[idIndex] : values[dexIndex];
+    const rawCaught = String(values[caughtIndex] || "").trim().toLowerCase();
+
+    const pokemonId = Number(String(rawId).replace("#", ""));
+    if (!pokemonId || pokemonId < 1 || pokemonId > MAX_POKEMON_ID) {
+      continue;
+    }
+
+    const isCaught =
+      rawCaught === "true" ||
+      rawCaught === "yes" ||
+      rawCaught === "1" ||
+      rawCaught === "caught";
+
+    const isUncaught =
+      rawCaught === "false" ||
+      rawCaught === "no" ||
+      rawCaught === "0" ||
+      rawCaught === "uncaught" ||
+      rawCaught === "";
+
+    if (!isCaught && !isUncaught) {
+      continue;
+    }
+
+    if (isCaught) {
+      importedCaught[pokemonId] = true;
+    } else {
+      delete importedCaught[pokemonId];
+    }
+
+    changedCount++;
+  }
+
+  caught = importedCaught;
+  saveCaught();
+  renderGrid();
+
+  if (selectedPokemonId !== null) {
+    const selectedMon = getPokemonById(selectedPokemonId);
+    if (selectedMon) updateSelectedPanel(selectedMon);
+  }
+
+  setAuthMessage(`CSV imported. Updated ${changedCount} Pokémon.`);
+}
+
 function setupAuthHandlers() {
   const client = getSupabaseClient();
   if (!client) {
@@ -1011,6 +1171,13 @@ function setupAuthHandlers() {
   if (loadCloudSaveBtn) loadCloudSaveBtn.addEventListener("click", () => loadCloudDex(true));
   if (saveUsernameBtn) saveUsernameBtn.addEventListener("click", saveUsername);
   if (deleteAccountBtn) deleteAccountBtn.addEventListener("click", deleteAccount);
+  if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportCaughtCsv);
+  if (importCsvInput) {
+    importCsvInput.addEventListener("change", async (event) => {
+      await importCaughtCsv(event.target.files[0]);
+      event.target.value = "";
+    });
+  }
 
   supabaseClient.auth.onAuthStateChange(async (event, session) => {
     updateAuthUi(session?.user || null);
